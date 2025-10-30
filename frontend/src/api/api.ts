@@ -1,53 +1,60 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from 'axios';
 
-// Types
 export interface CanvasDataDTO {
   version: string;
   objects: any[];
 }
+
 export interface LayerDTO {
-  id: string;
+  _id?: string;
   name: string;
   visible: boolean;
   locked: boolean;
 }
+
 export interface CommentDTO {
-  id: string;
+  _id?: string;
   author: string;
   message: string;
-  createdAt: string;
-  targetObjectId: string | null;
+  createdAt?: string;
+  targetObjectId?: string | null;
 }
 
+// --- Axios instance ---
 const api = axios.create({
-  baseURL: '/api', // Adjust as needed in your backend
+  baseURL: 'http://localhost:5001/api',
+  headers: { 'Content-Type': 'application/json' },
 });
 
-// Canvas API
-export const fetchCanvasData = async (): Promise<CanvasDataDTO> => {
-  // Placeholder stub
-  return { version: '1.0', objects: [] };
+// --- DESIGN / CANVAS ---
+export const fetchCanvasData = async (): Promise<CanvasDataDTO[]> => {
+  const res = await api.get('/designs');
+  return res.data;
 };
 
 export const saveCanvasData = async (data: CanvasDataDTO): Promise<void> => {
-  // Placeholder stub
-  return;
+  await api.post('/designs', data);
 };
 
-// Layers API
+// --- LAYERS ---
 export const fetchLayers = async (): Promise<LayerDTO[]> => {
-  return [];
+  const res = await api.get('/layers');
+  return res.data;
 };
+
 export const addLayerAPI = async (layer: LayerDTO): Promise<LayerDTO> => {
-  return layer;
+  const res = await api.post('/layers', layer);
+  return res.data;
 };
-// Comments API
+
+// --- COMMENTS ---
 export const fetchComments = async (): Promise<CommentDTO[]> => {
-  return [];
+  const res = await api.get('/comments');
+  return res.data;
 };
+
 export const addCommentAPI = async (comment: CommentDTO): Promise<CommentDTO> => {
-  return comment;
+  const res = await api.post('/comments', comment);
+  return res.data;
 };
-// All API endpoints above can later be swapped with real axios calls, e.g.:
-// const resp = await api.get('/canvas');
-// return resp.data;

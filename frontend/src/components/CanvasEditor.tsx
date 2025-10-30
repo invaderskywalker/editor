@@ -1,55 +1,67 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { type RootState } from '../redux/store';
+import { useDispatch } from 'react-redux';
 import { setCanvasData } from '../redux/designSlice';
 import { useFabricCanvas } from '../hooks/useFabricCanvas';
 import { useSocket } from '../hooks/useSocket';
-// import { fetchCanvasData } from '../api/api'; // Uncomment when API ready
+import type { CanvasDataDTO } from '../api/api';
+
+interface CanvasEditorProps {
+  canvasData: CanvasDataDTO | null;
+  onCanvasChange: (data: CanvasDataDTO) => void;
+}
 
 const CANVAS_ID = 'fabric-canvas';
-const SOCKET_URL = 'http://localhost:4000'; // Placeholder, adjust as needed
+const SOCKET_URL = 'http://localhost:5001'; // Adjust for your backend
 
-const CanvasEditor: React.FC = () => {
+const CanvasEditor: React.FC<CanvasEditorProps> = ({
+  canvasData,
+  onCanvasChange,
+}) => {
   const dispatch = useDispatch();
-  const canvasData = useSelector((state: RootState) => state.design.canvasData);
   const canvasRef = useFabricCanvas(CANVAS_ID);
   const socketRef = useSocket(SOCKET_URL);
 
-  // ✅ Load initial canvas data (future API integration)
+  // 🧠 Load existing canvas data into Fabric when it changes
   useEffect(() => {
-    // Example: load saved design when backend is ready
-    // fetchCanvasData().then((data) => dispatch(setCanvasData(data)));
-  }, [dispatch]);
+    const canvas = canvasRef.current;
+    if (!canvas || !canvasData) return;
 
-  // ✅ Real-time sync (Socket.io)
+    canvas.loadFromJSON(canvasData, () => {
+      canvas.renderAll();
+    });
+  }, [canvasData, canvasRef]);
+
+  // 🧩 Real-time socket updates
   useEffect(() => {
     const socket = socketRef.current;
     const canvas = canvasRef.current;
 
     if (!socket || !canvas) return;
 
-    // Listen for canvas updates
-    socket.on('canvas_update', (newData: unknown) => {
-      if (newData) dispatch(setCanvasData(newData as any)); // TODO: type properly
+    // When receiving updates from others
+    socket.on('canvas_update', (newData: CanvasDataDTO) => {
+      canvas.loadFromJSON(newData, () => canvas.renderAll());
+      dispatch(setCanvasData(newData));
     });
 
-    // Broadcast when local changes occur
+    // When local canvas changes
     const onModified = () => {
-      socket.emit('canvas_update', canvas.toJSON());
+      const newData = canvas.toJSON();
+      socket.emit('canvas_update', newData);
+      onCanvasChange(newData as CanvasDataDTO);
     };
 
     canvas.on('object:modified', onModified);
     canvas.on('object:added', onModified);
 
-    // Cleanup listeners on unmount
     return () => {
       socket.off('canvas_update');
       canvas.off('object:modified', onModified);
       canvas.off('object:added', onModified);
     };
-  }, [socketRef, canvasRef, dispatch]);
+  }, [socketRef, canvasRef, dispatch, onCanvasChange]);
 
   return (
     <div className="w-full h-full flex justify-center items-center bg-gray-50">
