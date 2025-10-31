@@ -1,11 +1,13 @@
-// layerRoutes for Layer entity endpoints
+// routes/layerRoutes.ts
 import { Router } from 'express';
 import { LayerController } from '../controllers/LayerController';
 
-const router = Router();
+const router = Router({ mergeParams: true }); // important!
+
 router.get('/', LayerController.getAll);
-router.get('/:id', LayerController.getById);
 router.post('/', LayerController.create);
-router.put('/:id', LayerController.update);
-router.delete('/:id', LayerController.delete);
+router.get('/:layerId', LayerController.getById);
+router.put('/:layerId', LayerController.update);
+router.delete('/:layerId', LayerController.delete);
+
 export default router;

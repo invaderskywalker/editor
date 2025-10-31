@@ -1,11 +1,13 @@
-// commentRoutes for Comment entity endpoints
+// routes/commentRoutes.ts
 import { Router } from 'express';
 import { CommentController } from '../controllers/CommentController';
 
-const router = Router();
+const router = Router({ mergeParams: true });
+
 router.get('/', CommentController.getAll);
-router.get('/:id', CommentController.getById);
 router.post('/', CommentController.create);
-router.put('/:id', CommentController.update);
-router.delete('/:id', CommentController.delete);
+router.get('/:commentId', CommentController.getById);
+router.put('/:commentId', CommentController.update);
+router.delete('/:commentId', CommentController.delete);
+
 export default router;

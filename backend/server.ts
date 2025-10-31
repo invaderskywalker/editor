@@ -9,6 +9,7 @@ import commentRoutes from './routes/commentRoutes';
 import { initSocketServer } from './sockets/SocketServer';
 
 import dotenv from 'dotenv';
+import { errorHandler } from './middlewares/errorHandler';
 dotenv.config();
 
 const app = express();
@@ -24,6 +25,7 @@ app.use(cors({
 app.use('/api/designs', designRoutes);
 app.use('/api/layers', layerRoutes);
 app.use('/api/comments', commentRoutes);
+app.use(errorHandler)
 
 // Create HTTP server for Socket.io compatibility
 const httpServer = createServer(app);

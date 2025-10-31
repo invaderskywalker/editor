@@ -1,32 +1,76 @@
-// SocketServer for collaborative events using Socket.io
+// sockets/SocketServer.ts
 import { Server as HttpServer } from 'http';
 import { Server as IOServer, Socket } from 'socket.io';
+import { Design } from '../models/Design';
 
 export function initSocketServer(httpServer: HttpServer) {
   const io = new IOServer(httpServer, {
-    cors: {
-      origin: 'http://localhost:5173',
-      credentials: true
-    }
+    cors: { origin: 'http://localhost:5173', credentials: true }
   });
 
   io.on('connection', (socket: Socket) => {
     console.log(`User connected: ${socket.id}`);
-    // Placeholder for design/layer/comment update events
-    socket.on('design:update', (data) => {
-      // Broadcast updated design to collaborators
-      socket.broadcast.emit('design:update', data);
+
+    socket.on('layer:add', async ({ designId, layer }) => {
+      const room = `design:${designId}`;
+      try {
+        const design = await Design.findById(designId);
+        if (!design) return;
+        design.layers.push(layer);
+        await design.save();
+        io.to(room).emit('layer:added', { layer });
+      } catch (e) {}
     });
-    socket.on('layer:update', (data) => {
-      socket.broadcast.emit('layer:update', data);
+
+    // ----- join a design room -----
+    socket.on('design:join', async ({ designId }) => {
+      const room = `design:${designId}`;
+      socket.join(room);
+      console.log(`${socket.id} joined ${room}`);
+
+      try {
+        const design = await Design.findById(designId).lean();
+        if (design) socket.emit('design:load', design);
+      } catch (e) {
+        socket.emit('error', { code: 'LOAD_FAILED', message: 'Cannot load design' });
+      }
     });
-    socket.on('comment:update', (data) => {
-      socket.broadcast.emit('comment:update', data);
+
+    // ----- receive canvas update from a client -----
+    socket.on('design:update', async ({ designId, canvas }) => {
+      const room = `design:${designId}`;
+      // broadcast to everyone **except** sender
+      socket.to(room).emit('design:update', { canvas, from: socket.id });
+
+      // ---- persist (autosave) ----
+      try {
+        await Design.findByIdAndUpdate(designId, { canvas }, { new: true });
+      } catch (e) {
+        console.error('Autosave failed', e);
+        socket.emit('error', { code: 'AUTOSAVE_FAILED', message: 'Could not save' });
+      }
     });
-    // Handle user presence, typing, etc. here
+
+    // ----- add a comment (real-time + DB) -----
+    socket.on('comment:add', async ({ designId, comment }) => {
+      const room = `design:${designId}`;
+      try {
+        const design = await Design.findById(designId);
+        if (!design) return socket.emit('error', { code: 'NOT_FOUND', message: 'Design missing' });
+
+        design.comments.push(comment);
+        await design.save();
+
+        io.to(room).emit('comment:added', { comment });
+      } catch (e) {
+        socket.emit('error', { code: 'COMMENT_SAVE_FAILED', message: 'Could not add comment' });
+      }
+    });
+
     socket.on('disconnect', () => {
       console.log(`User disconnected: ${socket.id}`);
     });
   });
+
   return io;
 }

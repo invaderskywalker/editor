@@ -1,89 +1,85 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { setCanvasData } from '../redux/designSlice';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// src/components/CanvasEditor.tsx
+import React, { useEffect, useRef } from 'react';
 import { useFabricCanvas } from '../hooks/useFabricCanvas';
 import { useSocket } from '../hooks/useSocket';
-import type { CanvasDataDTO } from '../api/api';
+import { updateDesign } from '../api/api';
+import { useSelector } from 'react-redux';
+import { type RootState } from '../redux/store';
 
-interface CanvasEditorProps {
-  canvasData: CanvasDataDTO | null;
-  onCanvasChange: (data: CanvasDataDTO) => void;
+interface Props {
+  designId: string;
 }
 
 const CANVAS_ID = 'fabric-canvas';
-const SOCKET_URL = 'http://localhost:5001'; // Adjust for your backend
+const SOCKET_URL = 'http://localhost:5001';
 
-const CanvasEditor: React.FC<CanvasEditorProps> = ({
-  canvasData,
-  onCanvasChange,
-}) => {
-  const dispatch = useDispatch();
-  const canvasRef = useFabricCanvas(CANVAS_ID);
-  const socketRef = useSocket(SOCKET_URL);
+const CanvasEditor: React.FC<Props> = ({ designId }) => {
+  const canvas = useFabricCanvas(CANVAS_ID);
+  const socket = useSocket(SOCKET_URL);
+  const canvasData = useSelector((state: RootState) => state.design.canvasData);
+  const saveTimeout = useRef<any>(null);
 
-  // 🧠 Load existing canvas data into Fabric when it changes
+  // Load initial canvas
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !canvasData) return;
+    if (!canvas.current || !canvasData) return;
+    canvas.current.loadFromJSON(canvasData, () => canvas.current?.renderAll());
+  }, [canvasData, canvas]);
 
-    canvas.loadFromJSON(canvasData, () => {
-      canvas.renderAll();
-    });
-  }, [canvasData, canvasRef]);
-
-  // 🧩 Real-time socket updates
+  // Socket: receive updates
   useEffect(() => {
-    const socket = socketRef.current;
-    const canvas = canvasRef.current;
+    const s = socket.current;
+    if (!s) return;
 
-    if (!socket || !canvas) return;
-
-    // When receiving updates from others
-    socket.on('canvas_update', (newData: CanvasDataDTO) => {
-      canvas.loadFromJSON(newData, () => canvas.renderAll());
-      dispatch(setCanvasData(newData));
+    s.on('design:update', ({ canvas: newCanvas }) => {
+      if (!canvas.current) return;
+      canvas.current.loadFromJSON(newCanvas, () => canvas.current?.renderAll());
     });
 
-    // When local canvas changes
-    const onModified = () => {
-      const newData = canvas.toJSON();
-      socket.emit('canvas_update', newData);
-      onCanvasChange(newData as CanvasDataDTO);
-    };
-
-    canvas.on('object:modified', onModified);
-    canvas.on('object:added', onModified);
+    s.on('layer:added', ({ layer }) => {
+      // optional: highlight
+    });
 
     return () => {
-      socket.off('canvas_update');
-      canvas.off('object:modified', onModified);
-      canvas.off('object:added', onModified);
+      s.off('design:update');
+      s.off('layer:added');
     };
-  }, [socketRef, canvasRef, dispatch, onCanvasChange]);
+  }, [socket, canvas]);
 
+  // Local change → emit + debounce save
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !canvasData) return;
+    const c = canvas.current;
+    if (!c) return;
 
-    try {
-      canvas.loadFromJSON(canvasData, () => {
-        canvas.renderAll();
-      });
-    } catch (err) {
-      console.error('Error loading canvas data:', err);
-    }
-  }, [canvasData, canvasRef]);
+    const onChange = () => {
+      const json = c.toJSON();
+      socket.current?.emit('design:update', { designId, canvas: json });
 
+      // Debounced autosave
+      if (saveTimeout.current) clearTimeout(saveTimeout.current);
+      saveTimeout.current = setTimeout(() => {
+        updateDesign(designId, { canvas: json });
+      }, 1000);
+    };
+
+    c.on('object:modified', onChange);
+    c.on('object:added', onChange);
+    c.on('object:removed', onChange);
+
+    return () => {
+      c.off('object:modified', onChange);
+      c.off('object:added', onChange);
+      c.off('object:removed', onChange);
+      if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    };
+  }, [canvas, socket, designId]);
 
   return (
-    <div className="w-full h-full flex justify-center items-center bg-gray-50">
+    <div className="flex-1 flex justify-center items-center bg-gray-100 p-4">
       <canvas
         id={CANVAS_ID}
-        width={1000}
-        height={600}
-        className="border border-gray-300 rounded shadow"
+        className="border border-gray-300 rounded shadow-lg"
       />
     </div>
   );

@@ -1,20 +1,78 @@
-// DesignService handles design data access
+// services/DesignService.ts
 import { Request, Response } from 'express';
+import { Design } from '../models/Design';
+import { Types } from 'mongoose';
 
 export class DesignService {
-  static async getAll(req: Request, res: Response) {
-    res.status(200).json({ message: 'List all designs (stub)' });
+  // GET /api/designs
+  static async getAll(_req: Request, res: Response) {
+    try {
+      const designs = await Design.find({}, 'title updatedAt thumbnail')
+        .sort({ updatedAt: -1 })
+        .lean();
+      res.json({ data: designs });
+    } catch (err: any) {
+      res.status(500).json({ code: 'DB_ERROR', message: err.message });
+    }
   }
+
+  // GET /api/designs/:id
   static async getById(req: Request, res: Response) {
-    res.status(200).json({ message: `Get design by id ${req.params.id} (stub)` });
+    const { id } = req.params;
+    if (!Types.ObjectId.isValid(id))
+      return res.status(400).json({ code: 'INVALID_ID', message: 'Invalid design id' });
+
+    try {
+      const design = await Design.findById(id);
+      if (!design) return res.status(404).json({ code: 'NOT_FOUND', message: 'Design not found' });
+      res.json({ data: design });
+    } catch (err: any) {
+      res.status(500).json({ code: 'DB_ERROR', message: err.message });
+    }
   }
+
+  // POST /api/designs
   static async create(req: Request, res: Response) {
-    res.status(201).json({ message: 'Create design (stub)' });
+    try {
+      const { title, owner = 'anonymous', canvas = { version: '5.3.0', objects: [] } } = req.body;
+      const design = new Design({ title, owner, canvas });
+      await design.save();
+      res.status(201).json({ data: design });
+    } catch (err: any) {
+      res.status(400).json({ code: 'CREATE_FAILED', message: err.message });
+    }
   }
+
+  // PUT /api/designs/:id   (full replace or partial patch)
   static async update(req: Request, res: Response) {
-    res.status(200).json({ message: `Update design by id ${req.params.id} (stub)` });
+    const { id } = req.params;
+    if (!Types.ObjectId.isValid(id))
+      return res.status(400).json({ code: 'INVALID_ID', message: 'Invalid design id' });
+
+    try {
+      const design = await Design.findByIdAndUpdate(id, req.body, {
+        new: true,
+        runValidators: true
+      });
+      if (!design) return res.status(404).json({ code: 'NOT_FOUND', message: 'Design not found' });
+      res.json({ data: design });
+    } catch (err: any) {
+      res.status(400).json({ code: 'UPDATE_FAILED', message: err.message });
+    }
   }
+
+  // DELETE /api/designs/:id
   static async delete(req: Request, res: Response) {
-    res.status(200).json({ message: `Delete design by id ${req.params.id} (stub)` });
+    const { id } = req.params;
+    if (!Types.ObjectId.isValid(id))
+      return res.status(400).json({ code: 'INVALID_ID', message: 'Invalid design id' });
+
+    try {
+      const design = await Design.findByIdAndDelete(id);
+      if (!design) return res.status(404).json({ code: 'NOT_FOUND', message: 'Design not found' });
+      res.json({ message: 'Deleted' });
+    } catch (err: any) {
+      res.status(500).json({ code: 'DELETE_FAILED', message: err.message });
+    }
   }
 }
