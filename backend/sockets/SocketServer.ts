@@ -5,7 +5,7 @@ import { Server as IOServer, Socket } from 'socket.io';
 export function initSocketServer(httpServer: HttpServer) {
   const io = new IOServer(httpServer, {
     cors: {
-      origin: 'http://localhost:3000',
+      origin: 'http://localhost:5173',
       credentials: true
     }
   });

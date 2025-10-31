@@ -63,6 +63,20 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({
     };
   }, [socketRef, canvasRef, dispatch, onCanvasChange]);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !canvasData) return;
+
+    try {
+      canvas.loadFromJSON(canvasData, () => {
+        canvas.renderAll();
+      });
+    } catch (err) {
+      console.error('Error loading canvas data:', err);
+    }
+  }, [canvasData, canvasRef]);
+
+
   return (
     <div className="w-full h-full flex justify-center items-center bg-gray-50">
       <canvas
