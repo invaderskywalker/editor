@@ -45,19 +45,12 @@ export const updateDesign = async (id: string, updates: Partial<any>) => {
 };
 
 // === LAYERS ===
-export const getLayers = async (designId: string): Promise<LayerDTO[]> => {
-  const res = await api.get(`/designs/${designId}/layers`);
-  return res.data.data;
-};
-
-export const addLayer = async (designId: string, layer: Omit<LayerDTO, '_id'>): Promise<LayerDTO> => {
+export const addLayer = async (
+  designId: string,
+  layer: { name: string; visible: boolean; locked: boolean }
+) => {
   const res = await api.post(`/designs/${designId}/layers`, layer);
-  return res.data.data;
-};
-
-export const updateLayer = async (designId: string, layerId: string, updates: Partial<LayerDTO>) => {
-  const res = await api.put(`/designs/${designId}/layers/${layerId}`, updates);
-  return res.data.data;
+  return res.data.data; // includes _id
 };
 
 export const deleteLayer = async (designId: string, layerId: string) => {
@@ -65,12 +58,10 @@ export const deleteLayer = async (designId: string, layerId: string) => {
 };
 
 // === COMMENTS ===
-export const getComments = async (designId: string): Promise<CommentDTO[]> => {
-  const res = await api.get(`/designs/${designId}/comments`);
-  return res.data.data;
-};
-
-export const addComment = async (designId: string, comment: Omit<CommentDTO, '_id'>): Promise<CommentDTO> => {
+export const addComment = async (
+  designId: string,
+  comment: Omit<CommentDTO, '_id'>
+): Promise<CommentDTO> => {
   const res = await api.post(`/designs/${designId}/comments`, comment);
   return res.data.data;
 };

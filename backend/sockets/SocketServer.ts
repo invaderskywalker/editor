@@ -11,18 +11,24 @@ export function initSocketServer(httpServer: HttpServer) {
   io.on('connection', (socket: Socket) => {
     console.log(`User connected: ${socket.id}`);
 
+    // ---------- LAYER ADD ----------
     socket.on('layer:add', async ({ designId, layer }) => {
       const room = `design:${designId}`;
       try {
         const design = await Design.findById(designId);
         if (!design) return;
+
         design.layers.push(layer);
         await design.save();
-        io.to(room).emit('layer:added', { layer });
-      } catch (e) {}
+
+        const addedLayer = design.layers[design.layers.length - 1];
+        io.to(room).emit('layer:added', { layer: addedLayer });
+      } catch (e) {
+        console.error(e);
+      }
     });
 
-    // ----- join a design room -----
+    // ---------- JOIN DESIGN ----------
     socket.on('design:join', async ({ designId }) => {
       const room = `design:${designId}`;
       socket.join(room);
@@ -36,34 +42,16 @@ export function initSocketServer(httpServer: HttpServer) {
       }
     });
 
-    // ----- receive canvas update from a client -----
+    // ---------- CANVAS UPDATE ----------
     socket.on('design:update', async ({ designId, canvas }) => {
       const room = `design:${designId}`;
-      // broadcast to everyone **except** sender
       socket.to(room).emit('design:update', { canvas, from: socket.id });
 
-      // ---- persist (autosave) ----
       try {
         await Design.findByIdAndUpdate(designId, { canvas }, { new: true });
       } catch (e) {
         console.error('Autosave failed', e);
         socket.emit('error', { code: 'AUTOSAVE_FAILED', message: 'Could not save' });
-      }
-    });
-
-    // ----- add a comment (real-time + DB) -----
-    socket.on('comment:add', async ({ designId, comment }) => {
-      const room = `design:${designId}`;
-      try {
-        const design = await Design.findById(designId);
-        if (!design) return socket.emit('error', { code: 'NOT_FOUND', message: 'Design missing' });
-
-        design.comments.push(comment);
-        await design.save();
-
-        io.to(room).emit('comment:added', { comment });
-      } catch (e) {
-        socket.emit('error', { code: 'COMMENT_SAVE_FAILED', message: 'Could not add comment' });
       }
     });
 
