@@ -28,6 +28,23 @@ export function initSocketServer(httpServer: HttpServer) {
       }
     });
 
+    // ---------- LAYER DELETE ----------
+    socket.on('layer:delete', async ({ designId, layerId }) => {
+      const room = `design:${designId}`;
+      try {
+        const design = await Design.findById(designId);
+        if (!design) return;
+
+        design.layers.pull(layerId);
+        await design.save();
+
+        // Broadcast to room
+        io.to(room).emit('layer:deleted', { layerId });
+      } catch (e) {
+        console.error(e);
+      }
+    });
+
     // ---------- JOIN DESIGN ----------
     socket.on('design:join', async ({ designId }) => {
       const room = `design:${designId}`;

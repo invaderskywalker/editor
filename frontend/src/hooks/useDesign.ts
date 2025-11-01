@@ -20,21 +20,30 @@ export function useDesign(designId?: string) {
     const load = async () => {
       try {
         let id = designId;
-        if (!id) {
+
+        // ---------- FIX: More lenient ID check ----------
+        const isValidMongoId = (str: string) => /^[0-9a-fA-F]{24}$/.test(str);
+        if (!id || !isValidMongoId(id)) {
+          console.log('Creating new design (ID invalid or missing):', id);
           const newDesign = await createDesign('Untitled');
           id = newDesign._id;
           window.history.replaceState(null, '', `/?id=${id}`);
+        } else {
+          console.log('Loading existing design:', id);
         }
         if (id) {
           const data = await getDesign(id);
+          console.log('Loaded design:', data); // Debug log
           setDesign(data);
           setLayers(data.layers || []);
           setCanvas(data.canvas || { version: '5.3.0', objects: [] });
 
+          // Join room
           socket.emit('design:join', { designId: id });
+          console.log('Joined room for design:', id); // Debug log
         }
 
-        // Listen for layer add
+        // Listen for updates
         socket.on('layer:added', ({ layer }) => {
           setLayers(prev => {
             if (prev.some(l => l._id === layer._id)) return prev;
@@ -42,13 +51,12 @@ export function useDesign(designId?: string) {
           });
         });
 
-        // Listen for canvas update
         socket.on('design:update', ({ canvas: newCanvas }) => {
           setCanvas(newCanvas);
         });
 
       } catch (err) {
-        console.error(err);
+        console.error('Load error:', err);
       } finally {
         setLoading(false);
       }
@@ -59,7 +67,7 @@ export function useDesign(designId?: string) {
     return () => {
       socket.off('layer:added');
       socket.off('design:update');
-      socket.disconnect();
+      if (socketRef.current) socketRef.current.disconnect();
     };
   }, [designId]);
 
