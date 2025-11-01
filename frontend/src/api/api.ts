@@ -22,7 +22,13 @@ export const updateDesign = async (id: string, updates: Partial<any>) => {
   return data.data;
 };
 
-/* ---------- LAYERS / COMMENTS – **socket only** ---------- */
-export const addLayer = () => { throw new Error('Use socket'); };
-export const deleteLayer = () => { throw new Error('Use socket'); };
-export const addComment = () => { throw new Error('Use socket'); };
+/* ---------- USER ---------- */
+export const getOrCreateUser = async (name: string, email: string) => {
+  const { data } = await api.post('/users', { name, email });
+  return data.data;
+};
+
+export const getAllUsers = async () => {
+  const { data } = await api.get('/users');
+  return data.data;
+};

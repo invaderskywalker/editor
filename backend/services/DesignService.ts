@@ -31,7 +31,7 @@ export class DesignService {
     }
 
     try {
-      const design = await Design.findById(id).lean(); // Use .lean() for speed
+      const design = await Design.findById(id).populate('comments.user', 'name email avatar')
       if (!design) {
         return res.status(404).json({ code: 'NOT_FOUND', message: 'Design not found' });
       }

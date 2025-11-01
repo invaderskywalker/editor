@@ -10,7 +10,7 @@ export interface ILayer {
 
 export interface IComment {
   _id?: Types.ObjectId;
-  author: string;
+  user: Types.ObjectId;     // ✅ link userId
   text: string;
   createdAt: Date;
   objectId?: string;
@@ -39,7 +39,7 @@ const LayerSchema = new Schema<ILayer>(
 
 const CommentSchema = new Schema<IComment>(
   {
-    author: { type: String, required: true },
+    user: { type: Schema.Types.ObjectId, ref: 'User', required: true }, // ✅ ref
     text: { type: String, required: true },
     createdAt: { type: Date, default: Date.now },
     objectId: { type: String },

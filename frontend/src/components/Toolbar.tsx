@@ -118,6 +118,7 @@ const Toolbar: React.FC<Props> = ({ canvas, undo, redo, exportPNG, designId }) =
       <div className="toolbar-divider" />
       <button onClick={deleteSelected} className="toolbar-btn toolbar-btn-red">Delete</button>
       <button onClick={exportPNG} className="toolbar-btn toolbar-btn-indigo">Export PNG</button>
+
     </div>
   );
 };

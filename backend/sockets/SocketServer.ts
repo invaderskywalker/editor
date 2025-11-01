@@ -26,6 +26,8 @@ export function initSocketServer(httpServer: HttpServer) {
   const lastCanvasHashByDesign: HashMap = new Map();
   const saveTimers: TimerMap = new Map();
   const SAVE_DEBOUNCE_MS = 800; // debounce DB writes per-design
+  // Map<room, Map<socket.id, userObject>>
+  const activeUsersByRoom: Record<string, Record<string, any>> = {};
 
   io.on('connection', (socket: Socket) => {
     console.log(`User connected: ${socket.id}`);
@@ -191,19 +193,51 @@ export function initSocketServer(httpServer: HttpServer) {
         const design = await Design.findById(designId);
         if (!design) return;
 
-        design.comments.push(comment);
+        // comment = { userId, text }
+        const fullComment = {
+          user: comment.userId,
+          text: comment.text,
+          createdAt: new Date(),
+        };
+
+        design.comments.push(fullComment as any);
         await design.save();
 
-        const added = design.comments[design.comments.length - 1];
-        broadcast('comment:added', { comment: added }, room);
+        // populate for broadcast (so frontend has user info)
+        const populated = await Design.populate(fullComment, { path: 'user', select: 'name email avatar' });
+
+        io.to(room).emit('comment:added', { comment: populated });
       } catch (e) {
-        console.error(e);
+        console.error('Error adding comment:', e);
       }
     });
 
-    // ---------- DISCONNECT ----------
+    // ---------- USER PRESENCE ----------
+    socket.on('user:join', ({ user, designId }) => {
+      const room = `design:${designId}`;
+      socket.join(room);
+
+      if (!activeUsersByRoom[room]) activeUsersByRoom[room] = {};
+      activeUsersByRoom[room][socket.id] = user;
+
+      console.log(`🟢 ${user.name} joined ${room}`);
+
+      // Broadcast updated list
+      const activeUsers = Object.values(activeUsersByRoom[room]);
+      io.to(room).emit('user:list', activeUsers);
+    });
+
     socket.on('disconnect', () => {
       console.log(`User disconnected: ${socket.id}`);
+      // Clean up from all rooms
+      for (const [room, users] of Object.entries(activeUsersByRoom)) {
+        if (users[socket.id]) {
+          const leftUser = users[socket.id];
+          delete users[socket.id];
+          console.log(`🔴 ${leftUser?.name || 'Unknown user'} left ${room}`);
+          io.to(room).emit('user:list', Object.values(users));
+        }
+      }
     });
   });
 
