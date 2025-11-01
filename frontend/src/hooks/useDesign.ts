@@ -10,6 +10,7 @@ export function useDesign(designId?: string) {
   const [design, setDesign] = useState<any>(null);
   const [layers, setLayers] = useState<any[]>([]);
   const [canvas, setCanvas] = useState<any>(null);
+  const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const socketRef = useRef<Socket | null>(null);
 
@@ -37,13 +38,14 @@ export function useDesign(designId?: string) {
           setDesign(data);
           setLayers(data.layers || []);
           setCanvas(data.canvas || { version: '5.3.0', objects: [] });
+          setComments(data.comments || []);
 
           // Join room
           socket.emit('design:join', { designId: id });
           console.log('Joined room for design:', id); // Debug log
         }
 
-        // Listen for updates
+        // Listen for all relevant socket events
         socket.on('layer:added', ({ layer }) => {
           setLayers(prev => {
             if (prev.some(l => l._id === layer._id)) return prev;
@@ -51,8 +53,22 @@ export function useDesign(designId?: string) {
           });
         });
 
+        socket.on('layer:updated', ({ layers: newLayers }) => {
+          setLayers(newLayers);
+        });
+        socket.on('layer:deleted', ({ layerId }) => {
+          setLayers(prev => prev.filter(l => l._id !== layerId));
+        });
+        socket.on('layers:reordered', ({ layers: newLayers }) => {
+          setLayers(newLayers);
+        });
+
         socket.on('design:update', ({ canvas: newCanvas }) => {
           setCanvas(newCanvas);
+        });
+
+        socket.on('comment:added', ({ comment }) => {
+          setComments(prev => [...prev, comment]);
         });
 
       } catch (err) {
@@ -66,10 +82,17 @@ export function useDesign(designId?: string) {
 
     return () => {
       socket.off('layer:added');
+      socket.off('layer:updated');
+      socket.off('layer:deleted');
+      socket.off('layers:reordered');
       socket.off('design:update');
+      socket.off('comment:added');
       if (socketRef.current) socketRef.current.disconnect();
     };
   }, [designId]);
 
-  return { design, layers, canvas, loading, designId: design?._id };
+  // For external use: allow mutation of comments
+  const appendCommentLocal = (comment: any) => setComments(prev => [...prev, comment]);
+
+  return { design, layers, canvas, loading, designId: design?._id, comments, appendCommentLocal };
 }

@@ -1,6 +1,7 @@
 // src/components/LayerPanel.tsx
 import React, { useState } from 'react';
 import { updateDesign, deleteLayer } from '../api/api';
+import { useSocket } from '../hooks/useSocket';
 
 interface Layer {
   _id: string;
@@ -15,9 +16,12 @@ interface Props {
   onAddLayer: (layer: { name: string; visible: boolean; locked: boolean }) => void;
 }
 
+const SOCKET_URL = 'http://localhost:5001';
+
 const LayerPanel: React.FC<Props> = ({ layers, designId, onAddLayer }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const socket = useSocket(SOCKET_URL);
 
   const moveLayer = async (index: number, direction: 'up' | 'down') => {
     const newLayers = [...layers];
@@ -26,6 +30,8 @@ const LayerPanel: React.FC<Props> = ({ layers, designId, onAddLayer }) => {
 
     [newLayers[index], newLayers[target]] = [newLayers[target], newLayers[index]];
     await updateDesign(designId, { layers: newLayers });
+    // Notify others
+    socket.current?.emit('layers:reordered', { designId, layers: newLayers });
   };
 
   const startRename = (layer: Layer) => {
@@ -39,10 +45,14 @@ const LayerPanel: React.FC<Props> = ({ layers, designId, onAddLayer }) => {
     );
     await updateDesign(designId, { layers: newLayers });
     setEditingId(null);
+    // Notify others
+    socket.current?.emit('layer:updated', { designId, layers: newLayers });
   };
 
   const removeLayer = async (layerId: string) => {
     await deleteLayer(designId, layerId);
+    // Notify others
+    socket.current?.emit('layer:deleted', { designId, layerId });
   };
 
   return (

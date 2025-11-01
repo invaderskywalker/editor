@@ -5,6 +5,7 @@ import { useFabricCanvas } from '../hooks/useFabricCanvas';
 import { useSocket } from '../hooks/useSocket';
 import { updateDesign } from '../api/api';
 import Toolbar from './Toolbar';
+import '../../styles/ui-panels.css';
 
 interface Props {
   designId: string;
@@ -103,10 +104,10 @@ const CanvasEditor: React.FC<Props> = ({ designId, canvasData }) => {
   }, [canvas, socket, designId]);
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-100">
+    <div className="canvas-editor-wrapper">
       <Toolbar canvas={canvas} undo={undo} redo={redo} exportPNG={exportPNG} />
-      <div className="flex-1 flex justify-center items-center p-4 overflow-auto">
-        <canvas id={CANVAS_ID} className="border border-gray-300 rounded shadow-lg bg-white" />
+      <div className="canvas-editor-center">
+        <canvas id={CANVAS_ID} className="canvas-editor-canvas" />
       </div>
     </div>
   );

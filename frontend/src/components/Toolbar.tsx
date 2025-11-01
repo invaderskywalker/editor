@@ -1,9 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-// src/components/Toolbar.tsx
 import React from 'react';
 import * as fabric from 'fabric';
-import { useDispatch } from 'react-redux';
-import { setCanvasData } from '../redux/designSlice';
+import '../../styles/ui-panels.css';
 
 interface Props {
   canvas: React.MutableRefObject<fabric.Canvas | null>;
@@ -13,7 +11,7 @@ interface Props {
 }
 
 const Toolbar: React.FC<Props> = ({ canvas, undo, redo, exportPNG }) => {
-  const dispatch = useDispatch();
+  // Removed unused useDispatch and dispatch
 
   const addText = () => {
     const text = new fabric.IText('Double-click to edit', {
@@ -57,7 +55,7 @@ const Toolbar: React.FC<Props> = ({ canvas, undo, redo, exportPNG }) => {
   const addImage = () => {
     const url = prompt('Enter image URL:');
     if (!url) return;
-    fabric.Image.fromURL(url, (img) => {
+    fabric.Image.fromURL(url, (img: fabric.Image) => {
       img.scaleToWidth(200);
       canvas.current?.add(img);
       canvas.current?.setActiveObject(img);
@@ -73,35 +71,31 @@ const Toolbar: React.FC<Props> = ({ canvas, undo, redo, exportPNG }) => {
   };
 
   return (
-    <div className="flex items-center gap-2 p-3 bg-white border-b shadow-sm flex-wrap">
-      <button onClick={addText} className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+    <div className="toolbar">
+      <button onClick={addText} className="toolbar-btn toolbar-btn-blue">
         Text
       </button>
-      <button onClick={addRect} className="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700">
+      <button onClick={addRect} className="toolbar-btn toolbar-btn-green">
         Rectangle
       </button>
-      <button onClick={addCircle} className="px-3 py-1.5 bg-orange-600 text-white text-sm rounded hover:bg-orange-700">
+      <button onClick={addCircle} className="toolbar-btn toolbar-btn-orange">
         Circle
       </button>
-      <button onClick={addImage} className="px-3 py-1.5 bg-purple-600 text-white text-sm rounded hover:bg-purple-700">
+      <button onClick={addImage} className="toolbar-btn toolbar-btn-purple">
         Image
       </button>
-
-      <div className="w-px h-8 bg-gray-300 mx-2" />
-
-      <button onClick={undo} className="px-3 py-1.5 bg-gray-600 text-white text-sm rounded hover:bg-gray-700">
+      <div className="toolbar-divider" />
+      <button onClick={undo} className="toolbar-btn toolbar-btn-gray">
         Undo
       </button>
-      <button onClick={redo} className="px-3 py-1.5 bg-gray-600 text-white text-sm rounded hover:bg-gray-700">
+      <button onClick={redo} className="toolbar-btn toolbar-btn-gray">
         Redo
       </button>
-
-      <div className="w-px h-8 bg-gray-300 mx-2" />
-
-      <button onClick={deleteSelected} className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700">
+      <div className="toolbar-divider" />
+      <button onClick={deleteSelected} className="toolbar-btn toolbar-btn-red">
         Delete
       </button>
-      <button onClick={exportPNG} className="px-3 py-1.5 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700">
+      <button onClick={exportPNG} className="toolbar-btn toolbar-btn-indigo">
         Export PNG
       </button>
     </div>
