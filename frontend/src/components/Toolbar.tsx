@@ -53,13 +53,13 @@ const Toolbar: React.FC<Props> = ({ canvas, undo, redo, exportPNG }) => {
   };
 
   const addImage = () => {
-    const url = prompt('Enter image URL:');
-    if (!url) return;
-    fabric.Image.fromURL(url, (img: fabric.Image) => {
-      img.scaleToWidth(200);
-      canvas.current?.add(img);
-      canvas.current?.setActiveObject(img);
-    });
+    // const url = prompt('Enter image URL:');
+    // if (!url) return;
+    // fabric.Image.fromURL(url, (img: fabric.Image) => {
+    //   img.scaleToWidth(200);
+    //   canvas.current?.add(img);
+    //   canvas.current?.setActiveObject(img);
+    // });
   };
 
   const deleteSelected = () => {
