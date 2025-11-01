@@ -1,0 +1,26 @@
+.canvas-editor-wrapper {
+  flex: 1 1 0%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  background: #f5f7fb;
+  padding: 2.5rem 1.5rem 1.5rem 1.5rem;
+  min-width: 0;
+  position: relative;
+  max-height: 100vh;
+  overflow: hidden;
+}
+.canvas-editor-center {
+  display: flex;
+  flex: 1 1 0%;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  max-height: 100%;
+  padding: 1rem;
+  overflow: auto;
+}
+.canvas-editor-canvas {
+  /* Instead use .ui-canvas-frame for canvas element. Kept for legacy className, but forwarded. */
+}

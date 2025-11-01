@@ -1,0 +1,5 @@
+.layer-panel { /* Marker class, all core styles now in ui-panels.css */ }
+
+.layer-item { /* for additional per-layer micro-overrides only (if any) */ }
+
+/* All structure, color, card, and action styling now in styles/ui-panels.css */

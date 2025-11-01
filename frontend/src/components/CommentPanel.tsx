@@ -1,5 +1,6 @@
 import React from 'react';
 import { useSocket } from '../hooks/useSocket';
+import '../../styles/ui-panels.css';
 
 interface Comment { _id?: string; author: string; text: string; createdAt?: string; }
 interface Props {
@@ -16,16 +17,16 @@ const CommentPanel: React.FC<Props> = ({ comments, designId }) => {
   };
 
   return (
-    <div className="w-80 bg-white border-l p-4 overflow-y-auto">
-      <h3 className="font-bold text-lg mb-3">Comments</h3>
+    <div className="ui-panel comment-panel">
+      <h3 className="ui-panel-title">Comments</h3>
       {comments.map((c, i) => (
-        <div key={c._id ?? i} className="bg-gray-50 p-3 rounded mb-2">
-          <p className="font-medium text-sm">{c.author}</p>
-          <p className="text-sm text-gray-700">{c.text}</p>
-          {c.createdAt && <p className="text-xs text-gray-500">{new Date(c.createdAt).toLocaleString()}</p>}
+        <div key={c._id ?? i} className="ui-item comment-item">
+          <p className="comment-author">{c.author}</p>
+          <p className="comment-text">{c.text}</p>
+          {c.createdAt && <p className="comment-time">{new Date(c.createdAt).toLocaleString()}</p>}
         </div>
       ))}
-      <button onClick={add} className="mt-4 w-full px-3 py-1.5 bg-green-600 text-white rounded">
+      <button onClick={add} className="ui-panel-btn">
         + Add Comment
       </button>
     </div>

@@ -4,6 +4,7 @@ import { useFabricCanvas } from '../hooks/useFabricCanvas';
 import { useSocket } from '../hooks/useSocket';
 import { updateDesign } from '../api/api';
 import Toolbar from './Toolbar';
+import '../CanvasEditor.css';
 import '../../styles/ui-panels.css';
 
 interface Props {
@@ -85,7 +86,6 @@ const CanvasEditor: React.FC<Props> = ({ designId, canvasData }) => {
       }, 1000);
     };
 
-    // Only broadcast on actual user changes
     c.on('object:modified', broadcast);
     c.on('object:added', broadcast);
     c.on('object:removed', broadcast);
@@ -101,7 +101,7 @@ const CanvasEditor: React.FC<Props> = ({ designId, canvasData }) => {
     <div className="canvas-editor-wrapper">
       <Toolbar canvas={canvas} undo={undo} redo={redo} exportPNG={exportPNG} designId={designId} />
       <div className="canvas-editor-center">
-        <canvas id={CANVAS_ID} className="canvas-editor-canvas" />
+        <canvas id={CANVAS_ID} className="ui-canvas-frame" />
       </div>
     </div>
   );

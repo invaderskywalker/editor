@@ -1,0 +1,19 @@
+.comment-panel { /* Marker, uses ui-panel core styles for layout. */ }
+
+.comment-author {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #3b3e56;
+  margin-bottom: 0.2rem;
+}
+.comment-text {
+  font-size: 0.95rem;
+  color: #264653;
+}
+.comment-time {
+  font-size: 0.82rem;
+  color: #90a4ae;
+  margin-top: 0.26rem;
+}
+
+/* All structure, title, button, and card styling is now unified via styles/ui-panels.css. */

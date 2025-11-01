@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useSocket } from '../hooks/useSocket';
+import '../../styles/ui-panels.css';
 
 interface Layer { _id: string; name: string; visible: boolean; locked: boolean; }
 interface Props {
@@ -36,35 +37,32 @@ const LayerPanel: React.FC<Props> = ({ layers, designId }) => {
   };
 
   return (
-    <div className="w-64 bg-white border-r p-4 overflow-y-auto">
-      <h3 className="font-bold text-lg mb-3">Layers</h3>
-
+    <div className="ui-panel layer-panel">
+      <h3 className="ui-panel-title">Layers</h3>
       {layers.map((l, i) => (
-        <div key={l._id} className="flex items-center justify-between p-2 bg-gray-50 rounded hover:bg-gray-100 text-sm group">
+        <div key={l._id} className="ui-item layer-item">
           {editingId === l._id ? (
             <input
               value={editName}
               onChange={e => setEditName(e.target.value)}
               onBlur={() => rename(l._id)}
               onKeyDown={e => e.key === 'Enter' && rename(l._id)}
-              className="flex-1 px-1"
+              className="ui-input layer-input"
               autoFocus
             />
           ) : (
-            <span onDoubleClick={() => { setEditingId(l._id); setEditName(l.name); }} className="flex-1 cursor-text">
+            <span onDoubleClick={() => { setEditingId(l._id); setEditName(l.name); }} className="layer-name">
               {l.name}
             </span>
           )}
-
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100">
-            <button onClick={() => move(i, 'up')} className="text-xs">Up</button>
-            <button onClick={() => move(i, 'down')} className="text-xs">Down</button>
-            <button onClick={() => remove(l._id)} className="text-xs text-red-600">X</button>
+          <div className="layer-actions">
+            <button onClick={() => move(i, 'up')} className="ui-action-btn">Up</button>
+            <button onClick={() => move(i, 'down')} className="ui-action-btn">Down</button>
+            <button onClick={() => remove(l._id)} className="ui-action-btn delete">X</button>
           </div>
         </div>
       ))}
-
-      <button onClick={add} className="mt-4 w-full px-3 py-1.5 bg-blue-600 text-white rounded">
+      <button onClick={add} className="ui-panel-btn">
         + Add Layer
       </button>
     </div>
