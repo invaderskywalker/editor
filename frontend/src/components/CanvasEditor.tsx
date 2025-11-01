@@ -124,7 +124,7 @@ const CanvasEditor: React.FC<Props> = ({ designId, canvasData }) => {
       s.off('canvas:update', onRemote);
       s.off('canvas:object:add');
     };
-  }, [socket, canvasRef]);
+  }, [socket, canvasRef, push]);
 
   // ---------- Broadcast changes ----------
   useEffect(() => {
