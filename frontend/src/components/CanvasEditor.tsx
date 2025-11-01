@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// src/components/CanvasEditor.tsx
 import React, { useEffect, useRef } from 'react';
 import { useFabricCanvas } from '../hooks/useFabricCanvas';
 import { useSocket } from '../hooks/useSocket';
@@ -13,99 +12,94 @@ interface Props {
 }
 
 const CANVAS_ID = 'fabric-canvas';
-const SOCKET_URL = 'http://localhost:5001';
 const CANVAS_SIZE = { width: 1080, height: 1080 };
 
 const CanvasEditor: React.FC<Props> = ({ designId, canvasData }) => {
   const canvas = useFabricCanvas(CANVAS_ID);
-  const socket = useSocket(SOCKET_URL);
+  const socket = useSocket();
   const saveTimeout = useRef<any>(null);
 
-  // History
+  // ---------- History ----------
   const history = useRef<string[]>([]);
-  const historyStep = useRef<number>(-1);
-  const MAX_HISTORY = 20;
+  const step = useRef(-1);
+  const MAX = 20;
 
-  const pushHistory = () => {
+  const push = () => {
     if (!canvas.current) return;
     const json = JSON.stringify(canvas.current.toJSON());
-    if (historyStep.current >= 0 && history.current[historyStep.current] === json) return;
-    history.current = history.current.slice(0, historyStep.current + 1);
+    if (step.current >= 0 && history.current[step.current] === json) return;
+    history.current = history.current.slice(0, step.current + 1);
     history.current.push(json);
-    if (history.current.length > MAX_HISTORY) history.current.shift();
-    historyStep.current = history.current.length - 1;
+    if (history.current.length > MAX) history.current.shift();
+    step.current = history.current.length - 1;
   };
 
   const undo = () => {
-    if (historyStep.current <= 0 || !canvas.current) return;
-    historyStep.current--;
-    const state = JSON.parse(history.current[historyStep.current]);
-    canvas.current.loadFromJSON(state, () => canvas.current?.renderAll());
+    if (step.current <= 0 || !canvas.current) return;
+    step.current--;
+    canvas.current.loadFromJSON(JSON.parse(history.current[step.current]), () => canvas.current?.renderAll());
   };
 
   const redo = () => {
-    if (historyStep.current >= history.current.length - 1 || !canvas.current) return;
-    historyStep.current++;
-    const state = JSON.parse(history.current[historyStep.current]);
-    canvas.current.loadFromJSON(state, () => canvas.current?.renderAll());
+    if (step.current >= history.current.length - 1 || !canvas.current) return;
+    step.current++;
+    canvas.current.loadFromJSON(JSON.parse(history.current[step.current]), () => canvas.current?.renderAll());
   };
 
   const exportPNG = () => {
-    if (!canvas.current) return;
-    const dataURL = canvas.current.toDataURL({ format: 'png', multiplier: 2 });
-    const link = document.createElement('a');
-    link.href = dataURL;
-    link.download = 'design.png';
-    link.click();
+    const url = canvas.current?.toDataURL({ format: 'png', multiplier: 2 });
+    if (!url) return;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'design.png';
+    a.click();
   };
 
-  // Set canvas size
+  // ---------- Canvas size ----------
   useEffect(() => {
-    if (canvas.current) {
-      canvas.current.setDimensions(CANVAS_SIZE);
-    }
+    canvas.current?.setDimensions(CANVAS_SIZE);
   }, [canvas]);
 
-  // Load canvas
+  // ---------- Load ----------
   useEffect(() => {
     if (!canvas.current || !canvasData) return;
     canvas.current.loadFromJSON(canvasData, () => {
       canvas.current?.renderAll();
-      pushHistory();
+      push();
     });
   }, [canvasData, canvas]);
 
-  // Broadcast changes
+  // ---------- Broadcast ----------
   useEffect(() => {
     const c = canvas.current;
     if (!c) return;
 
-    const onChange = () => {
+    const broadcast = () => {
       const json = c.toJSON();
-      socket.current?.emit('design:update', { designId, canvas: json });
-      pushHistory();
+      socket.current?.emit('canvas:update', { designId, canvas: json });
+      push();
 
       if (saveTimeout.current) clearTimeout(saveTimeout.current);
       saveTimeout.current = setTimeout(() => {
-        updateDesign(designId, { canvas: json });
+        updateDesign(designId, { canvas: json }).catch(console.error);
       }, 1000);
     };
 
-    c.on('object:modified', onChange);
-    c.on('object:added', onChange);
-    c.on('object:removed', onChange);
+    // Only broadcast on actual user changes
+    c.on('object:modified', broadcast);
+    c.on('object:added', broadcast);
+    c.on('object:removed', broadcast);
 
     return () => {
-      c.off('object:modified', onChange);
-      c.off('object:added', onChange);
-      c.off('object:removed', onChange);
-      if (saveTimeout.current) clearTimeout(saveTimeout.current);
+      c.off('object:modified', broadcast);
+      c.off('object:added', broadcast);
+      c.off('object:removed', broadcast);
     };
   }, [canvas, socket, designId]);
 
   return (
     <div className="canvas-editor-wrapper">
-      <Toolbar canvas={canvas} undo={undo} redo={redo} exportPNG={exportPNG} />
+      <Toolbar canvas={canvas} undo={undo} redo={redo} exportPNG={exportPNG} designId={designId} />
       <div className="canvas-editor-center">
         <canvas id={CANVAS_ID} className="canvas-editor-canvas" />
       </div>

@@ -4,8 +4,8 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import { createServer } from 'http';
 import designRoutes from './routes/designRoutes';
-import layerRoutes from './routes/layerRoutes';
-import commentRoutes from './routes/commentRoutes';
+// import layerRoutes from './routes/layerRoutes';
+// import commentRoutes from './routes/commentRoutes';
 import { initSocketServer } from './sockets/SocketServer';
 
 import dotenv from 'dotenv';
@@ -23,8 +23,8 @@ app.use(cors({
 
 // Mounting REST routes
 app.use('/api/designs', designRoutes);
-app.use('/api/layers', layerRoutes);
-app.use('/api/comments', commentRoutes);
+// app.use('/api/layers', layerRoutes);
+// app.use('/api/comments', commentRoutes);
 app.use(errorHandler)
 
 // Create HTTP server for Socket.io compatibility

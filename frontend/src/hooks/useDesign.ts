@@ -1,10 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// src/hooks/useDesign.ts
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { getDesign, createDesign } from '../api/api';
-import { io, Socket } from 'socket.io-client';
-
-const SOCKET_URL = 'http://localhost:5001';
+import { useSocket } from './useSocket';
 
 export function useDesign(designId?: string) {
   const [design, setDesign] = useState<any>(null);
@@ -12,87 +9,64 @@ export function useDesign(designId?: string) {
   const [canvas, setCanvas] = useState<any>(null);
   const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const socketRef = useRef<Socket | null>(null);
+  const socket = useSocket();
 
   useEffect(() => {
-    socketRef.current = io(SOCKET_URL);
-    const socket = socketRef.current;
-
     const load = async () => {
-      try {
-        let id = designId;
+      let id = designId;
+      const validId = /^[0-9a-fA-F]{24}$/.test(id || '');
 
-        // ---------- FIX: More lenient ID check ----------
-        const isValidMongoId = (str: string) => /^[0-9a-fA-F]{24}$/.test(str);
-        if (!id || !isValidMongoId(id)) {
-          console.log('Creating new design (ID invalid or missing):', id);
-          const newDesign = await createDesign('Untitled');
-          id = newDesign._id;
-          window.history.replaceState(null, '', `/?id=${id}`);
-        } else {
-          console.log('Loading existing design:', id);
-        }
-        if (id) {
-          const data = await getDesign(id);
-          console.log('Loaded design:', data); // Debug log
-          setDesign(data);
-          setLayers(data.layers || []);
-          setCanvas(data.canvas || { version: '5.3.0', objects: [] });
-          setComments(data.comments || []);
-
-          // Join room
-          socket.emit('design:join', { designId: id });
-          console.log('Joined room for design:', id); // Debug log
-        }
-
-        // Listen for all relevant socket events
-        socket.on('layer:added', ({ layer }) => {
-          setLayers(prev => {
-            if (prev.some(l => l._id === layer._id)) return prev;
-            return [...prev, layer];
-          });
-        });
-
-        socket.on('layer:updated', ({ layers: newLayers }) => {
-          setLayers(newLayers);
-        });
-        socket.on('layer:deleted', ({ layerId }) => {
-          setLayers(prev => prev.filter(l => l._id !== layerId));
-        });
-        socket.on('layers:reordered', ({ layers: newLayers }) => {
-          setLayers(newLayers);
-        });
-
-        socket.on('design:update', ({ canvas: newCanvas }) => {
-          setCanvas(newCanvas);
-        });
-
-        socket.on('comment:added', ({ comment }) => {
-          setComments(prev => [...prev, comment]);
-        });
-
-      } catch (err) {
-        console.error('Load error:', err);
-      } finally {
-        setLoading(false);
+      if (!id || !validId) {
+        const newDesign = await createDesign('Untitled');
+        id = newDesign._id;
+        window.history.replaceState(null, '', `/?id=${id}`);
       }
+
+      const data = await getDesign(id!);
+      setDesign(data);
+      setLayers(data.layers ?? []);
+      setCanvas(data.canvas ?? { version: '5.3.0', objects: [] });
+      setComments(data.comments ?? []);
+
+      // Join room
+      socket.current?.emit('design:join', { designId: id });
+
+      // ---------- LISTEN ----------
+      const s = socket.current!;
+      s.on('design:load', (d) => {
+        setLayers(d.layers ?? []);
+        setCanvas(d.canvas ?? { version: '5.3.0', objects: [] });
+        setComments(d.comments ?? []);
+      });
+
+      s.on('canvas:update', ({ canvas: c }) => {
+        setCanvas(c);
+        // Optional: force re-render
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 0);
+      });
+
+      s.on('layer:added', ({ layer }) => {
+        setLayers(p => p.some(l => l._id === layer._id) ? p : [...p, layer]);
+      });
+      s.on('layer:deleted', ({ layerId }) => {
+        setLayers(p => p.filter(l => l._id !== layerId));
+      });
+      s.on('layers:replace', ({ layers: l }) => setLayers(l));
+
+      // s.on('canvas:update', ({ canvas: c }) => setCanvas(c));
+      s.on('comment:added', ({ comment }) => setComments(p => [...p, comment]));
+
+      setLoading(false);
     };
 
     load();
 
     return () => {
-      socket.off('layer:added');
-      socket.off('layer:updated');
-      socket.off('layer:deleted');
-      socket.off('layers:reordered');
-      socket.off('design:update');
-      socket.off('comment:added');
-      if (socketRef.current) socketRef.current.disconnect();
+      socket.current?.off();
     };
-  }, [designId]);
+  }, [designId, socket]);
 
-  // For external use: allow mutation of comments
-  const appendCommentLocal = (comment: any) => setComments(prev => [...prev, comment]);
+  const appendCommentLocal = (c: any) => setComments(p => [...p, c]);
 
-  return { design, layers, canvas, loading, designId: design?._id, comments, appendCommentLocal };
+  return { design, layers, canvas, comments, loading, designId: design?._id, appendCommentLocal };
 }
