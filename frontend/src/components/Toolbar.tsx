@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// ====== ./src/components/Toolbar.tsx ======
 import React from 'react';
 import * as fabric from 'fabric';
 import { useSocket } from '../hooks/useSocket';
-import '../../styles/ui-panels.css';
+import '../styles/ui-panels.css';
 
 interface Props {
   canvas: React.MutableRefObject<fabric.Canvas | null>;
@@ -14,46 +16,95 @@ interface Props {
 const Toolbar: React.FC<Props> = ({ canvas, undo, redo, exportPNG, designId }) => {
   const socket = useSocket();
 
-  const broadcast = () => {
-    const json = canvas.current?.toJSON();
-    socket.current?.emit('canvas:update', { designId, canvas: json });
+  const ensureCanvas = (): fabric.Canvas | null => {
+    if (!canvas.current) {
+      console.warn('Canvas not ready yet');
+      return null;
+    }
+    return canvas.current;
   };
 
   const addText = () => {
-    if (!canvas.current) return;
-    const t = new fabric.IText('Double-click to edit', { left: 100, top: 100, fontSize: 30, fill: '#333' });
-    canvas.current.add(t);
-    canvas.current.setActiveObject(t);
-    canvas.current.renderAll();
-    // broadcast();
+    const c = ensureCanvas();
+    if (!c) return;
+
+    try {
+      // Use Textbox for better cross-version compatibility
+      const t = new fabric.IText('Double-click to edit', {
+        left: 100,
+        top: 100,
+        fontSize: 30,
+        fill: '#060606ff',
+        opacity: 1,
+        width: 300,
+        editable: true,
+      });
+
+      console.log('Adding text to canvas (textbox):', t, 'canvas:', c);
+      c.add(t);
+      // Make sure the object is active and visible immediately
+      c.setActiveObject(t);
+      // enter editing mode so user can type immediately
+      // guard for versions that may not have enterEditing
+      if ((t as any).enterEditing) {
+        (t as any).enterEditing();
+        (t as any).selectAll?.();
+      }
+      // ensure the canvas re-renders
+      c.requestRenderAll?.();
+      c.renderAll?.();
+
+      // Broadcast a single-object add if you want others to see it
+      // socket.current?.emit('canvas:object:add', { designId, object: t.toObject() });
+    } catch (err) {
+      console.error('Failed to add text object:', err);
+    }
   };
 
   const addRect = () => {
-    if (!canvas.current) return;
-    const r = new fabric.Rect({ left: 150, top: 150, width: 200, height: 120, fill: '#4caf50' });
-    canvas.current.add(r);
-    canvas.current.setActiveObject(r);
-    canvas.current.renderAll();
-    // broadcast();
+    const c = ensureCanvas();
+    if (!c) return;
+    const r = new fabric.Rect({
+      left: 150,
+      top: 150,
+      width: 200,
+      height: 120,
+      fill: '#4caf50',
+    });
+    c.add(r);
+    c.setActiveObject(r);
+    c.requestRenderAll?.();
+    c.renderAll?.();
+    socket.current?.emit('canvas:object:add', { designId, object: r.toObject() });
   };
 
   const addCircle = () => {
-    if (!canvas.current) return;
-    const c = new fabric.Circle({ left: 200, top: 200, radius: 80, fill: '#ff9800' });
-    canvas.current.add(c);
-    canvas.current.setActiveObject(c);
-    canvas.current.renderAll();
-    // broadcast();
+    const c = ensureCanvas();
+    if (!c) return;
+    const circle = new fabric.Circle({
+      left: 200,
+      top: 200,
+      radius: 80,
+      fill: '#ff9800',
+    });
+    c.add(circle);
+    c.setActiveObject(circle);
+    c.requestRenderAll?.();
+    c.renderAll?.();
+    socket.current?.emit('canvas:object:add', { designId, object: circle.toObject() });
   };
 
   const deleteSelected = () => {
-    const active = canvas.current?.getActiveObjects();
+    const c = ensureCanvas();
+    if (!c) return;
+    const active = c.getActiveObjects();
     if (active?.length) {
-      active.forEach(obj => canvas.current?.remove(obj));
-      canvas.current?.discardActiveObject();
-      canvas.current?.renderAll();
+      active.forEach(obj => c.remove(obj));
+      c.discardActiveObject();
+      c.requestRenderAll?.();
+      c.renderAll?.();
     }
-    // broadcast();
+    socket.current?.emit('canvas:update', { designId, canvas: c.toJSON() });
   };
 
   return (

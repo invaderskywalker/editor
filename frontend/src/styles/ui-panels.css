@@ -1,0 +1,404 @@
+/* === Modular UI Panel & Control Styles ===
+   Last major update: Nov 1, 2025
+   Unified styling for all Figma-like panels, items, toolbars, and common controls.
+   CommentPanel-specific minimized/expanded states and enhanced input-row handling below. */
+
+:root {
+  --ui-color-bg-main: #fff;
+  --ui-color-bg-panel: #f5f7fb;
+  --ui-color-border: #e5e7eb;
+  --ui-color-shadow: 0 4px 30px 0 rgba(64,84,178,0.10);
+  --ui-radius: 1rem;
+  --ui-padding-panel: 1.2rem;
+  --ui-spacing-item: 0.65rem;
+  --commentpanel-minimized-width: 64px;
+  --commentpanel-transition: width 0.22s cubic-bezier(0.5,0,0,1), min-width 0.22s cubic-bezier(0.5,0,0,1), box-shadow 0.24s;
+  --layerpanel-minimized-width: 64px;
+}
+
+.ui-panel {
+  background: var(--ui-color-bg-main);
+  border: 2px solid var(--ui-color-border);
+  border-radius: var(--ui-radius);
+  box-shadow: var(--ui-color-shadow);
+  padding: var(--ui-padding-panel);
+  display: flex;
+  flex-direction: column;
+  min-width: 13rem;
+  max-width: 24rem;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+}
+
+/* ==== Enhanced CommentPanel minimized/expanded states ==== */
+.comment-panel {
+  position: relative;
+  transition: var(--commentpanel-transition);
+  will-change: width, min-width, box-shadow, background;
+  min-width: 220px;
+  max-width: 400px;
+  width: 340px;
+  background: linear-gradient(120deg, #f9fafb 90%, #e8eeff 100%);
+  border-left: 3px solid #4178e6;
+  box-shadow: 0 4.5px 22px 0 rgba(64,84,178,0.12);
+  overflow-y: auto;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  padding: 1.24rem 1.18rem 0.7rem 1.2rem;
+  gap: 0.5rem;
+}
+.comment-panel.minimized {
+  min-width: var(--commentpanel-minimized-width);
+  width: var(--commentpanel-minimized-width);
+  max-width: var(--commentpanel-minimized-width);
+  flex: 0 0 var(--commentpanel-minimized-width) !important;
+  background: #e6eafd;
+  box-shadow: 0 2.5px 9px 0 rgba(64,84,178,0.06);
+  border-left: 3px solid #678aec;
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: 0.18rem;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+  gap: 0;
+  opacity: 0.98;
+}
+.comment-panel.minimized .ui-panel-title,
+.comment-panel.minimized .ui-item,
+.comment-panel.minimized .comment-list,
+.comment-panel.minimized .comment-input-form {
+  display: none !important;
+}
+.comment-panel.minimized .comment-panel-toggle {
+  margin: 13px auto 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 38px;
+  height: 38px;
+  box-shadow: 0 0.5px 4px 0 rgba(52,120,230,0.11);
+}
+
+.comment-panel-toggle {
+  position: absolute;
+  top: 15px;
+  right: 16px;
+  z-index: 9;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  box-shadow: 0 1.5px 12px 0 rgba(64,104,196,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  transition: background 0.13s, box-shadow 0.16s, border 0.11s;
+  border: 1.5px solid #e5e7f0;
+}
+.comment-panel-toggle svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+.comment-panel-toggle:focus,
+.comment-panel-toggle:hover {
+  box-shadow: 0 5px 24px 0 rgba(52,120,230,0.23);
+  border-color: #3764d6;
+}
+.comment-panel-toggle:focus-visible {
+  outline: 2.3px solid #2b63ed;
+  outline-offset: 2.2px;
+}
+
+/* ==== LayerPanel enhanced minimized/expanded states for parity with CommentPanel ==== */
+.layer-panel {
+  position: relative;
+  transition: var(--commentpanel-transition);
+  will-change: width, min-width, box-shadow, background;
+  min-width: 180px;
+  max-width: 360px;
+  width: 260px;
+  background: linear-gradient(120deg, #f9fafb 92%, #e7f1fa 100%);
+  box-shadow: 0 4.5px 22px 0 rgba(64,84,178,0.10);
+  padding: 1.15rem 1.1rem 0.6rem 1.08rem;
+  gap: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
+}
+.layer-panel.minimized {
+  min-width: var(--layerpanel-minimized-width);
+  max-width: var(--layerpanel-minimized-width);
+  width: var(--layerpanel-minimized-width);
+  flex: 0 0 var(--layerpanel-minimized-width) !important;
+  background: #e6f0fa;
+  box-shadow: 0 2.5px 9px 0 rgba(64,84,178,0.05);
+  border-right: 3px solid #89c6fd;
+  padding: 0;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+  gap: 0;
+  opacity: 0.98;
+}
+.layer-panel.minimized .ui-panel-title,
+.layer-panel.minimized .ui-item,
+.layer-panel.minimized .layer-list {
+  display: none !important;
+}
+.layer-panel.minimized .layer-panel-toggle {
+  margin: 13px auto 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 38px;
+  height: 38px;
+  box-shadow: 0 0.5px 4px 0 rgba(52,120,230,0.11);
+}
+
+.layer-panel-toggle {
+  position: absolute;
+  top: 15px;
+  right: 14px;
+  z-index: 9;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  box-shadow: 0 1.5px 12px 0 rgba(64,104,196,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  transition: background 0.13s, box-shadow 0.16s, border 0.11s;
+  border: 1.5px solid #e5e7f0;
+}
+.layer-panel-toggle svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+.layer-panel-toggle:focus,
+.layer-panel-toggle:hover {
+  box-shadow: 0 5px 24px 0 rgba(52,120,230,0.23);
+  border-color: #38a6d6;
+}
+.layer-panel-toggle:focus-visible {
+  outline: 2.3px solid #2b63ed;
+  outline-offset: 2.2px;
+}
+
+/* Accessibility: strong focus visible for toggle */
+.layer-panel-toggle:focus-visible {
+  outline: 2.4px solid #3678fa;
+  outline-offset: 1.2px;
+}
+
+/* === Comment input area === */
+.comment-input-form {
+  width: 100%;
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 0.7rem 0.4rem 0.5rem 0.2rem;
+  border-top: 1.5px solid #dce5fb;
+  background: #f5f8fc;
+  margin-top: 1.2rem;
+  position: sticky;
+  bottom: 0;
+  z-index: 11;
+}
+.comment-input-form .comment-input {
+  flex: 1 1 0%;
+  border-radius: 0.55rem;
+  border: 1.7px solid #bfc9e4;
+  padding: 0.43rem 0.88rem;
+  font-size: 1rem;
+  margin: 0;
+  background: #fff;
+  transition: border-color 0.17s, box-shadow 0.12s;
+}
+.comment-input-form .comment-input:focus {
+  border-color: #4e91fa;
+  box-shadow: 0 1.5px 8px 0 rgba(78,145,250,0.07);
+  outline: none;
+}
+.comment-input-form .ui-panel-btn {
+  width: auto;
+  min-width: 69px;
+  padding: 0.40rem 1.15rem;
+  border-radius: 0.52rem;
+  font-size: 1.05rem;
+  font-weight: 590;
+  margin: 0;
+  box-shadow: 0 0.5px 4px 0 rgba(64,84,178,0.08);
+  transition: filter 0.13s, background 0.13s;
+}
+.comment-input-form .ui-panel-btn:disabled {
+  filter: grayscale(0.88) brightness(1.1) opacity(0.7);
+  cursor: not-allowed;
+  background: #e7eaf0;
+}
+
+.comment-panel :focus-visible,
+.comment-input-form .comment-input:focus-visible,
+.comment-panel-toggle:focus-visible {
+  outline: 2.4px solid #3678fa;
+  outline-offset: 1.2px;
+}
+
+.comment-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding-bottom: 0.6em;
+  margin-bottom: 1.2rem;
+  margin-top: 0.25rem;
+  min-height: 48px;
+}
+
+.ui-panel-title {
+  font-size: 1.24rem;
+  font-weight: bold;
+  color: #284274;
+  margin-bottom: 1rem;
+  letter-spacing: 0.008em;
+}
+
+.ui-item.comment-item {
+  background: #f3f6fd;
+  border-radius: 0.75rem;
+  box-shadow: 0 1.3px 8px 0 rgba(48,90,140,0.12);
+  margin-bottom: var(--ui-spacing-item);
+  display: flex;
+  align-items: flex-start;
+  transition: background 0.14s;
+  padding: 0.66rem 1.05rem;
+  min-height: 2.25rem;
+  gap: 0.7rem;
+  border-left: 3px solid #85a8ef;
+}
+.ui-item.comment-item:hover {
+  background: #e5eefa;
+  border-left: 3px solid #5294ef;
+}
+
+.comment-author {
+  font-weight: 600;
+  font-size: 0.98rem;
+  color: #3b3e56;
+  margin-bottom: 0.14em;
+}
+.comment-text {
+  font-size: 0.98rem;
+  color: #2B364D;
+  line-height: 1.38;
+}
+.comment-time {
+  font-size: 0.81rem;
+  color: #8498b2;
+  margin-top: 0.22em;
+}
+
+.ui-panel-btn {
+  width: 100%;
+  padding: 0.48rem 1.08rem;
+  background: linear-gradient(90deg,#4090fa,#93b6fd);
+  color: #fff;
+  border-radius: 0.52rem;
+  border: none;
+  font-weight: 590;
+  font-size: 1.03rem;
+  cursor: pointer;
+  box-shadow: 0 1px 8px 0 rgba(64,104,196,0.09);
+  margin-top: 1.23rem;
+  transition: filter 0.13s, background 0.13s;
+}
+.ui-panel-btn:hover {
+  filter: brightness(1.06);
+  background: linear-gradient(90deg,#2668d7,#73a7fd);
+}
+
+/* Additional panel, toolbar, layout, and app root rules ... (preserve as before) */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  background: #f0f2f6;
+  padding: 12px 20px;
+  border-bottom: 1.7px solid var(--ui-color-border);
+  border-radius: 0.85rem 0.85rem 0 0;
+  box-shadow: none;
+  gap: 0.7rem;
+  margin-bottom: 6px;
+  position: relative;
+  z-index: 2;
+}
+.toolbar-btn {
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  padding: 0.38rem 1.1rem;
+  border-radius: 0.4rem;
+  background: #e6ecfa;
+  color: #204093;
+  cursor: pointer;
+  transition: background 0.11s, color 0.11s;
+  box-shadow: 0 1px 6px 0 rgba(64,84,178,0.07);
+  margin-right: 0.15rem;
+}
+.toolbar-btn:last-child {
+  margin-right: 0;
+}
+.toolbar-btn:hover {
+  background: #c2d1f7;
+}
+.toolbar-btn-blue {
+  background: #4895ef;
+  color: #fff;
+}
+.toolbar-btn-green {
+  background: #22d47e;
+  color: #fff;
+}
+.toolbar-btn-orange {
+  background: #ffa31a;
+  color: #fff;
+}
+.toolbar-btn-gray {
+  background: #dde6f7;
+  color: #444b5f;
+}
+.toolbar-btn-red {
+  background: #e53939;
+  color: #fff;
+}
+.toolbar-btn-indigo {
+  background: #635cff;
+  color: #fff;
+}
+.toolbar-divider {
+  height: 28px;
+  width: 1.5px;
+  background: #e0e7ef;
+  margin: 0 8px;
+  border-radius: 1px;
+}
+
+.ui-canvas-frame {
+  display: block;
+  margin: auto;
+  border-radius: 12px;
+  border: 2px solid #e0e7ef;
+  box-shadow: var(--ui-color-shadow);
+  background: #fff;
+  outline: none;
+  transition: box-shadow 0.15s;
+  max-width: 99vw;
+  max-height: 100%;
+}

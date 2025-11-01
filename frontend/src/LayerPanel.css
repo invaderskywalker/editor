@@ -1,5 +1,14 @@
 .layer-panel { /* Marker class, all core styles now in ui-panels.css */ }
 
+.layer-panel.minimized {
+  /* Optionally add style customizations for minimized panel */
+}
+
 .layer-item { /* for additional per-layer micro-overrides only (if any) */ }
+
+.layer-panel-toggle:focus {
+  outline: 2px solid #679efd;
+  outline-offset: 1px;
+}
 
 /* All structure, color, card, and action styling now in styles/ui-panels.css */

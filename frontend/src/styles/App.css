@@ -23,6 +23,14 @@
   border-right: 1px solid #e0e4ea;
   overflow-y: auto;
   z-index: 1;
+  transition: flex-basis 0.22s, min-width 0.22s, max-width 0.22s;
+}
+.app-root > .layer-panel.minimized {
+  flex: 0 0 64px;
+  min-width: 0 !important;
+  max-width: 64px;
+  overflow-x: hidden;
+  padding: 0;
 }
 .app-root > .canvas-editor-wrapper {
   flex: 1 1 0;
@@ -40,11 +48,26 @@
   border-left: 1px solid #e0e4ea;
   overflow-y: auto;
   z-index: 2;
+  transition: flex-basis 0.2s, min-width 0.2s, max-width 0.2s;
 }
-
-/* Responsive fallback */
+.app-root > .comment-panel.minimized {
+  flex: 0 0 100px;
+  min-width: 0 !important;
+  max-width: 100px;
+  overflow-x: hidden;
+  padding: 0;
+}
 @media (max-width: 800px) {
   .app-root > .comment-panel {
     display: none;
   }
+}
+
+
+canvas.upper-canvas {
+  z-index: 2 !important;
+  pointer-events: auto !important;
+}
+canvas.lower-canvas {
+  z-index: 1 !important;
 }

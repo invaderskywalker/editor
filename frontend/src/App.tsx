@@ -4,7 +4,7 @@ import CanvasEditor from './components/CanvasEditor';
 import LayerPanel from './components/LayerPanel';
 import CommentPanel from './components/CommentPanel';
 import { useDesign } from './hooks/useDesign';
-import './App.css';
+import './styles/App.css';
 
 const App: React.FC = () => {
   const [searchParams] = useSearchParams();

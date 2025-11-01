@@ -1,33 +1,47 @@
-// src/hooks/useFabricCanvas.ts
-import { useEffect, useRef } from 'react';
-import * as fabric from 'fabric';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// ====== ./src/hooks/useFabricCanvas.ts ======
+import { useEffect, useRef, useState } from "react";
+import * as fabric from "fabric";
 
-export function useFabricCanvas(canvasId: string) {
+export function useFabricCanvas(containerId: string) {
   const canvasRef = useRef<fabric.Canvas | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const canvasElem = document.getElementById(canvasId) as HTMLCanvasElement | null;
-    if (canvasElem && !canvasRef.current) {
-      canvasRef.current = new fabric.Canvas(canvasId, {
-        width: 1080,
-        height: 1080,
-        backgroundColor: '#ffffff',
-        selection: true,
-        preserveObjectStacking: true,
-      });
+    const container = document.getElementById(containerId);
+    if (!container || canvasRef.current) return;
 
-      // Show handles on selection
-      canvasRef.current.on('selection:created', () => canvasRef.current?.renderAll());
-      canvasRef.current.on('selection:updated', () => canvasRef.current?.renderAll());
-    }
+    // Create a canvas element dynamically
+    const canvasElem = document.createElement("canvas");
+    container.appendChild(canvasElem);
+
+    const c = new fabric.Canvas(canvasElem, {
+      width: 512,
+      height: 512,
+      backgroundColor: "#ffffff",
+      selection: true,
+      preserveObjectStacking: true,
+    });
+
+    // Force upper/lower layering
+    const lowers = container.querySelectorAll("canvas.lower-canvas");
+    const uppers = container.querySelectorAll("canvas.upper-canvas");
+    lowers.forEach(el => (el as HTMLCanvasElement).style.zIndex = "1");
+    uppers.forEach(el => (el as HTMLCanvasElement).style.zIndex = "3");
+
+    canvasRef.current = c;
+    (window as any).__canvas__ = c;
+    console.log("✅ Fabric initialized", c);
+
+    setReady(true);
 
     return () => {
-      if (canvasRef.current) {
-        canvasRef.current.dispose();
-        canvasRef.current = null;
-      }
+      c.dispose();
+      canvasRef.current = null;
+      container.innerHTML = "";
+      setReady(false);
     };
-  }, [canvasId]);
+  }, [containerId]);
 
-  return canvasRef;
+  return { canvasRef, ready };
 }
