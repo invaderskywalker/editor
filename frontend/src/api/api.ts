@@ -32,3 +32,8 @@ export const getAllUsers = async () => {
   const { data } = await api.get('/users');
   return data.data;
 };
+
+export const getAllDesigns = async () => {
+  const { data } = await api.get('/designs');
+  return data.data;
+};

@@ -8,6 +8,7 @@ import { useUser } from './hooks/useUser';
 import Login from './pages/Login';
 import ActiveUserBar from './components/ActiveUserbar';
 import './styles/App.css';
+import DesignListModal from './components/DesignListModal';
 
 const App: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -21,6 +22,9 @@ const App: React.FC = () => {
   // 🎯 new: selection + color communication
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | undefined>();
+
+  const [showList, setShowList] = useState(false);
+
 
   // ---- Check localStorage on load ----
   useEffect(() => {
@@ -66,6 +70,29 @@ const App: React.FC = () => {
         <h3 style={{ margin: 0, color: '#2a3692' }}>Collaborative Canvas</h3>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <ActiveUserBar />
+          {/* 👇 New button to open design list */}
+          <button
+            onClick={() => setShowList(true)}
+            style={{
+              border: '1px solid #cbd3ec',
+              background: '#fff',
+              color: '#2a3692',
+              padding: '6px 12px',
+              borderRadius: 6,
+              cursor: 'pointer',
+              fontWeight: 500,
+              boxShadow: '0 2px 6px rgba(44,79,168,0.08)',
+              transition: 'background 0.2s ease',
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = '#f0f4ff')
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = '#fff')
+            }
+          >
+            🗂️ All Designs
+          </button>
           <button
             onClick={handleLogout}
             style={{
@@ -224,6 +251,7 @@ const App: React.FC = () => {
           </div>
         )}
       </div>
+      <DesignListModal open={showList} onClose={() => setShowList(false)} />
     </div>
   );
 };
