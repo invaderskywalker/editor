@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from 'react';
 import { useSocket } from '../hooks/useSocket';
 import '../styles/ui-panels.css';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+// import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useUser } from '../hooks/useUser';
 
 
@@ -62,7 +63,7 @@ const CommentPanel: React.FC<Props> = ({ comments, designId }) => {
       aria-label={minimized ? 'Minimized comment panel' : 'Comment panel'}
     >
 
-      <div className="comment-panel-toggle"
+      {/* <div className="comment-panel-toggle"
         aria-label={minimized ? 'Expand Comment Panel' : 'Minimize Comment Panel'}
         onClick={() => setMinimized(m => !m)}
         tabIndex={0}>
@@ -72,7 +73,7 @@ const CommentPanel: React.FC<Props> = ({ comments, designId }) => {
         ) : (
           <ChevronLeft size={22} stroke="#3678fa" aria-hidden="true" />
         )}
-      </div>
+      </div> */}
 
       <div className="ui-panel-header" style={{ display: minimized ? 'none' : 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <h3 className="ui-panel-title" style={{ margin: 0 }}>Comments</h3>

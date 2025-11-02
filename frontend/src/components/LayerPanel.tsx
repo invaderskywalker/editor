@@ -1,31 +1,64 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from 'react';
 import { useSocket } from '../hooks/useSocket';
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  Trash2,
+  Eye,
+  EyeOff,
+  Lock,
+  Unlock,
+} from 'lucide-react';
 import '../styles/ui-panels.css';
 
-interface Layer { _id: string; name: string; visible: boolean; locked: boolean; }
+interface Layer {
+  id: string;
+  name: string;
+  visible: boolean;
+  locked: boolean;
+}
+
 interface Props {
   layers: Layer[];
   designId: string;
+  selectedLayerId: string | null;
+  onSelect: (id: string) => void;
+  onUpdate: (layers: Layer[]) => void;
 }
 
-const LayerPanel: React.FC<Props> = ({ layers, designId }) => {
+const LayerPanel: React.FC<Props> = ({
+  layers,
+  designId,
+  selectedLayerId,
+  onSelect,
+  onUpdate,
+}) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [minimized, setMinimized] = useState(false);
   const socket = useSocket();
 
-  const add = () =>
-    socket.current?.emit('layer:add', {
-      designId,
-      layer: { name: `Layer ${layers.length + 1}`, visible: true, locked: false },
-    });
+  const add = () => {
+    const newLayer: Layer = {
+      id: `layer_${Date.now()}`,
+      name: `Layer ${layers.length + 1}`,
+      visible: true,
+      locked: false,
+    };
+    const updated = [...layers, newLayer];
+    onUpdate(updated);
+    socket.current?.emit('layer:add', { designId, layer: newLayer });
+  };
 
   const move = (idx: number, dir: 'up' | 'down') => {
     const copy = [...layers];
     const target = dir === 'up' ? idx - 1 : idx + 1;
     if (target < 0 || target >= copy.length) return;
     [copy[idx], copy[target]] = [copy[target], copy[idx]];
+    onUpdate(copy);
     socket.current?.emit('layers:reorder', { designId, layers: copy });
   };
 
@@ -34,111 +67,156 @@ const LayerPanel: React.FC<Props> = ({ layers, designId }) => {
       setEditingId(null);
       return;
     }
-    socket.current?.emit('layer:update', { designId, layerId, updates: { name: editName } });
+    const updated = layers.map((l) =>
+      l.id === layerId ? { ...l, name: editName } : l
+    );
+    onUpdate(updated);
+    socket.current?.emit('layer:update', {
+      designId,
+      layerId,
+      updates: { name: editName },
+    });
     setEditingId(null);
   };
 
+  const toggleVisible = (layerId: string) => {
+    const updated = layers.map((l) =>
+      l.id === layerId ? { ...l, visible: !l.visible } : l
+    );
+    onUpdate(updated);
+    socket.current?.emit('layer:update', {
+      designId,
+      layerId,
+      updates: { visible: !layers.find((l) => l.id === layerId)?.visible },
+    });
+  };
+
+  const toggleLock = (layerId: string) => {
+    const updated = layers.map((l) =>
+      l.id === layerId ? { ...l, locked: !l.locked } : l
+    );
+    onUpdate(updated);
+    socket.current?.emit('layer:update', {
+      designId,
+      layerId,
+      updates: { locked: !layers.find((l) => l.id === layerId)?.locked },
+    });
+  };
+
   const remove = (layerId: string) => {
+    const updated = layers.filter((l) => l.id !== layerId);
+    onUpdate(updated);
     socket.current?.emit('layer:delete', { designId, layerId });
   };
 
-  // Allow hiding content in minimized state for accessibility (no tab stops inside)
   return (
     <div
-      className={"ui-panel layer-panel" + (minimized ? " minimized" : "")}
+      className={`ui-panel layer-panel${minimized ? ' minimized' : ''}`}
       aria-label={minimized ? 'Minimized layer panel' : 'Layer panel'}
-      tabIndex={-1}
     >
-      {/* Panel Header with minimizer */}
-      <div className="ui-panel-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: minimized ? 0 : 8, paddingBottom: '16px' }}>
-        <h3 className="ui-panel-title" style={{ margin: 0 }}>Layers</h3>
-        <div
-          className="layer-panel-toggle"
-          aria-label={minimized ? 'Expand Layer Panel' : 'Minimize Layer Panel'}
-          role="button"
-          tabIndex={0}
-          onClick={() => setMinimized(m => !m)}
-          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setMinimized(m => !m); }}
-          style={{ marginLeft: 6, cursor: 'pointer', display: 'flex', alignItems: 'center', border: 'none', background: 'none', padding: 2 }}
+      <div className="ui-panel-header" style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <h3 className="ui-panel-title">Layers</h3>
+        <button
+          className="ui-action-btn"
+          onClick={() => setMinimized((m) => !m)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer' }}
         >
-          {!minimized ? (
-            <ChevronLeft size={22} stroke="#3678fa" aria-hidden="true" />
+          {minimized ? (
+            <ChevronRight size={20} stroke="#3678fa" />
           ) : (
-            <ChevronRight size={22} stroke="#3678fa" aria-hidden="true" />
+            <ChevronLeft size={20} stroke="#3678fa" />
           )}
-        </div>
+        </button>
       </div>
-      {/* Content hidden when minimized */}
+
       {minimized ? null : (
         <>
           <div className="layer-list">
             {layers.map((l, i) => (
-              <div key={l._id} className="ui-item layer-item" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                {editingId === l._id ? (
+              <div
+                key={l.id}
+                className={`ui-item layer-item ${
+                  selectedLayerId === l.id ? 'selected' : ''
+                }`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background:
+                    selectedLayerId === l.id ? 'rgba(54,120,250,0.1)' : 'transparent',
+                  padding: '4px 6px',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                }}
+                onClick={() => onSelect(l.id)}
+              >
+                {editingId === l.id ? (
                   <input
                     value={editName}
-                    onChange={e => setEditName(e.target.value)}
-                    onBlur={() => rename(l._id)}
-                    onKeyDown={e => e.key === 'Enter' && rename(l._id)}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onBlur={() => rename(l.id)}
+                    onKeyDown={(e) => e.key === 'Enter' && rename(l.id)}
                     className="ui-input layer-input"
                     autoFocus
-                    aria-label="Edit layer name"
-                    style={{ flex: 1, minWidth: 0 }}
+                    style={{ flex: 1 }}
                   />
                 ) : (
                   <span
-                    onDoubleClick={() => { setEditingId(l._id); setEditName(l.name); }}
-                    className="layer-name"
-                    tabIndex={0}
-                    style={{ flex: 1, minWidth: 0, outline: 'none' }}
-                    aria-label={`Layer name: ${l.name}. Double click to rename.`}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') { setEditingId(l._id); setEditName(l.name); }
+                    onDoubleClick={() => {
+                      setEditingId(l.id);
+                      setEditName(l.name);
                     }}
+                    style={{ flex: 1 }}
                   >
                     {l.name}
                   </span>
                 )}
-                <div className="layer-actions" style={{ display: 'flex', gap: 4 }}>
-                  <button
-                    onClick={() => move(i, 'up')}
-                    className="ui-action-btn"
-                    aria-label="Move layer up"
-                    disabled={i === 0}
-                    tabIndex={0}
-                    type="button"
-                  >
-                    <ChevronUp size={18} />
-                  </button>
-                  <button
-                    onClick={() => move(i, 'down')}
-                    className="ui-action-btn"
-                    aria-label="Move layer down"
-                    disabled={i === layers.length - 1}
-                    tabIndex={0}
-                    type="button"
-                  >
-                    <ChevronDown size={18} />
-                  </button>
-                  <button
-                    onClick={() => remove(l._id)}
-                    className="ui-action-btn delete"
-                    aria-label="Delete layer"
-                    tabIndex={0}
-                    type="button"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
+
+                <button
+                  className="ui-action-btn"
+                  onClick={() => toggleVisible(l.id)}
+                  title={l.visible ? 'Hide layer' : 'Show layer'}
+                >
+                  {l.visible ? <Eye size={16} /> : <EyeOff size={16} />}
+                </button>
+                <button
+                  className="ui-action-btn"
+                  onClick={() => toggleLock(l.id)}
+                  title={l.locked ? 'Unlock layer' : 'Lock layer'}
+                >
+                  {l.locked ? <Lock size={16} /> : <Unlock size={16} />}
+                </button>
+                <button
+                  className="ui-action-btn"
+                  onClick={() => move(i, 'up')}
+                  disabled={i === 0}
+                  title="Move up"
+                >
+                  <ChevronUp size={16} />
+                </button>
+                <button
+                  className="ui-action-btn"
+                  onClick={() => move(i, 'down')}
+                  disabled={i === layers.length - 1}
+                  title="Move down"
+                >
+                  <ChevronDown size={16} />
+                </button>
+                <button
+                  className="ui-action-btn delete"
+                  onClick={() => remove(l.id)}
+                  title="Delete layer"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
             ))}
           </div>
+
           <button
             onClick={add}
             className="ui-panel-btn"
-            aria-label="Add new layer"
-            type="button"
-            style={{ width: '100%', marginTop: 6, minWidth: 0 }}
+            style={{ width: '100%', marginTop: 6 }}
           >
             + Add Layer
           </button>

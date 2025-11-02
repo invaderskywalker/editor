@@ -71,3 +71,65 @@ canvas.upper-canvas {
 canvas.lower-canvas {
   z-index: 1 !important;
 }
+
+
+/* === New: Absolute Floating Right Overlay Panel (non-destructive append) === */
+
+.floating-right-panel-overlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 400px;
+  max-width: 98vw;
+  height: 100vh;
+  background: rgba(250, 251, 255, 0.965);
+  box-shadow: -7px 0 32px 0 rgba(44,79,168,0.13), -1px 0 28px 0 rgba(44,79,168,0.11);
+  z-index: 1300;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.26s cubic-bezier(0.4,0.01,0.34,1), opacity 0.19s;
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+.floating-right-panel-overlay.open {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.floating-right-panel-overlay-close {
+  position: absolute;
+  top: 18px;
+  right: 19px;
+  z-index: 1310;
+  width: 38px;
+  height: 38px;
+  background: #fff;
+  border-radius: 50%;
+  border: 1.7px solid #dae3f9;
+  box-shadow: 0 3px 20px 0 rgba(44,79,168,0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.13s, box-shadow 0.14s, border 0.14s;
+}
+.floating-right-panel-overlay-close:hover,
+.floating-right-panel-overlay-close:focus {
+  background: #eff5fa;
+  border-color: #6695ed;
+  box-shadow: 0 6px 28px 0 rgba(70,131,240,0.27);
+}
+.floating-right-panel-overlay-close:focus-visible {
+  outline: 2.4px solid #4176f8;
+  outline-offset: 2.5px;
+}
+@media (max-width: 600px) {
+  .floating-right-panel-overlay {
+    width: 100vw;
+    min-width: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}

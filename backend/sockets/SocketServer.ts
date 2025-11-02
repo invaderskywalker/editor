@@ -44,7 +44,10 @@ export function initSocketServer(httpServer: HttpServer) {
       console.log(`${socket.id} joined ${room}`);
 
       try {
-        const design = await Design.findById(designId).lean();
+        const design = await Design.findById(designId).populate({
+          path: 'comments.user',
+          select: 'name email avatar', // include only safe user fields
+        }).lean();
         if (design) {
           // initialize lastCanvasHash for this design so server can ignore duplicates
           try {
@@ -186,6 +189,18 @@ export function initSocketServer(httpServer: HttpServer) {
       }
     });
 
+    // ---------- COLOR CHANGE ----------
+    socket.on('canvas:colorChange', async ({ color, source, designId }) => {
+      const room = `design:${designId}`;
+
+      // ✅ Broadcast to everyone else in the same design room
+      socket.to(room).emit('canvas:colorChange', { color, source: 'server' });
+
+      // Optional: also persist color change in DB, if you want
+      // but usually it's transient, and the next canvas:update handles it anyway
+    });
+
+
     // ---------- COMMENT ----------
     socket.on('comment:add', async ({ designId, comment }) => {
       const room = `design:${designId}`;
@@ -203,10 +218,16 @@ export function initSocketServer(httpServer: HttpServer) {
         design.comments.push(fullComment as any);
         await design.save();
 
-        // populate for broadcast (so frontend has user info)
-        const populated = await Design.populate(fullComment, { path: 'user', select: 'name email avatar' });
+        const populatedDesign = await Design.findById(designId)
+          .populate('comments.user', 'name email avatar')
+          .lean();
 
-        io.to(room).emit('comment:added', { comment: populated });
+        // populate for broadcast (so frontend has user info)
+        // const populated = await Design.populate(fullComment, { path: 'user', select: 'name email avatar' });
+
+        const lastComment = populatedDesign?.comments[populatedDesign.comments.length - 1];
+
+        io.to(room).emit('comment:added', { comment: lastComment });
       } catch (e) {
         console.error('Error adding comment:', e);
       }
